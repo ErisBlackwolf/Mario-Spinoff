@@ -4,12 +4,12 @@ public class Particle {
 	
 	public static final int G = 10;
 	
-	private int loop = 0;
+	private int loop = 0, jump = 0;
 	
 	private double x,y,w,h,vx,vy,mass,magnetic_str,mag_radius;//Double Variables that are used in constructors
 	private boolean movable, gravity, magnetic;
 							//Wall Jumps => left means wall is on left
-	private boolean jump = false, doubleJump = false, leftWJ = false, rightWJ = false;//Mario Centric Boolean Values
+	private boolean leftWJ = false, rightWJ = false, touchUpDown = false;//, touchLeftRight;//Mario Centric Boolean Values
 	private double ox,oy,ovx,ovy;//Double Variables used to store original passed values
 	
 	private Color color;
@@ -51,14 +51,38 @@ public class Particle {
 		location0 = new Vector(x,y);
 		location1 = new Vector(x,y);
 	}
+	//Simpler Constructor
+	public Particle(double x, double y, double w, double h, double mass, double magnetic_str, double mag_radius, boolean movable, boolean magnetic, Color color) {
+		this.movable = movable;
+		gravity = false;
+		this.magnetic = magnetic;
+		//Original Values
+		ox = x;
+		oy = y;
+		ovx = 0;
+		ovy = 0;
+		//Area Vector (x = width, y = height)
+		area0 = new Vector(w,h);
+		
+		this.mass = mass;
+		this.magnetic_str = magnetic_str;
+		this.mag_radius = mag_radius;
+		this.color = color;
+		
+		//Velocity Vectors
+		velocity0 = new Vector(0,0);
+		velocity1 = new Vector(0,0);
+		//Position (Location) Vectors
+		location0 = new Vector(x,y);
+		location1 = new Vector(x,y);
+	}
 	
-	public boolean willCollide(Particle object, double step) {
+	public boolean willCollide(Particle object, double step) {//Work in Progress
 		
 		if(velocity0.getComponent(2) == 0)
 			return false;
 		
-		vector0.setComponent(0, velocity0.getComponent(0));//Do not do vector0 = veloctiy0;
-		vector0.setComponent(1, velocity0.getComponent(1));//It starts to think they are the same
+		vector0.copyVector(velocity0);
 		
 		vector0.multiplyVectorBySingleNumber(2, step);// Half-Step. Quarter-Step is too much for Now
 		vector0.addVectors(location0);//Predicts where Object will be in "Half a Frame"
@@ -82,13 +106,15 @@ public class Particle {
 		return false;
 	}
 	public void doRectangleCollision(Particle[] objects) {
-		int numCollisions = 0;//for the jump = false if in air => I solved the problem
+		int numUDCollisions = 0;//Counts number of up/down collisions
+		int numLRCollisions = 0;//Left right
 		for( Particle p : objects) {
 			if( p == this)// Method Purpose is to do Rectangle Collision Stuff
 				continue;
 									   // || willCollide(p, 1/2)
 			if(isColliding(p)) {
-				numCollisions++;
+				touchUpDown = true;
+				//touchLeftRight = true;
 				
 				double x1 = p.x - (p.w / 2), x2 = p.x + (p.w / 2);//Side X Pos of Colliding Object
 				double y1 = p.y - (p.h / 2), y2 = p.y + (p.h / 2);//Side Y Pos
@@ -106,24 +132,28 @@ public class Particle {
 						leftWJ = true;
 					}
 					velocity1.setComponent(0, 0);
+					numLRCollisions++;
 				}
 				if( xGap < yGap) {//Up/Down
 					if(y < p.y) {
 						location1.setComponent(1, y1 - h/2);
-						jump = true;
-						doubleJump = true;
+						jump = 1;
 					}
 					if(y > p.y) {
 						location1.setComponent(1, y2 + h/2);
 					}
 					velocity1.setComponent(1, 0);
+					numUDCollisions++;
 				}
 			}
 		}
-		if(numCollisions == 0) {
-			jump = false;
+		if(numLRCollisions == 0) {
 			leftWJ = false;
 			rightWJ = false;
+			//touchLeftRight = false;
+		}
+		if(numUDCollisions == 0) {
+			touchUpDown = false;
 		}
 	}
 	
@@ -176,6 +206,7 @@ public class Particle {
 		System.out.println("Gravity Force == " +forceGravity.getComponent(2));
 		System.out.println("Net Field Force == " +forceFieldNet.getComponent(2));
 		*/
+		//forceNet.copyVector(forceFieldNet);
 		forceNet = forceFieldNet;
 	}
 	
@@ -191,10 +222,11 @@ public class Particle {
 			location1.addVectors(velocity0);
 		}
 		
-		location0 = location1;
+		location0.copyVector(location1);//Changed from loc0 = loc1
 		x = location0.getComponent(0);
 		y = location0.getComponent(1);
-		velocity0 = velocity1;
+		velocity0 = velocity1;//Use this. Other one doesn't work
+		//velocity1.copyVector(velocity0);//Changed from vel0 = vel1
 		vx = velocity0.getComponent(0);//Will keep this for code simplification
 		vy = velocity0.getComponent(1);//Like, vy = velocity0.getComponent(1); Its just easier
 	}//					velocity0.getComponent(1); sometimes is better though
@@ -213,22 +245,19 @@ public class Particle {
 	
 	
 	public void upKey() {
-		if(jump) {
+		if(jump > 0) {
 			velocity1.addToVector( 0, -16);
-			jump = false;
 			rightWJ = false;
 			leftWJ = false;
-		}
-		else if(doubleJump) {//Relies on Toggle boolean
-			doubleJump = false;
-			velocity1.setComponent(1, -10);
+			if(!touchUpDown)
+				jump--;
 		}
 	}
 	public void downKey() {
 		velocity1.addToVector( 0, 2);//Examine this Code
 	}
 	public void rightKey(double speed) {
-		if(jump == false && leftWJ == true) {
+		if(leftWJ == true && !touchUpDown) {
 			velocity1.setComponents(20, -8);//Adjust Wall Jump
 			leftWJ = false;
 		}
@@ -236,7 +265,7 @@ public class Particle {
 			velocity1.addToVector(speed, 0);
 	}
 	public void leftKey(double speed) {
-		if(jump == false && rightWJ == true) {
+		if(rightWJ == true && !touchUpDown) {
 			velocity1.setComponents(-20, -8);//Adjust Wall Jump
 			rightWJ = false;
 		}
@@ -251,7 +280,7 @@ public class Particle {
 	}
 	
 	public void testFriction() {
-		if(velocity0.getComponent(0) != 0 && jump == true)//If on Ground
+		if(velocity0.getComponent(0) != 0 && touchUpDown)//If on Ground
 			velocity1.multiplyVectorBySingleNumber(0, 0.75);
 		else if(Math.abs(velocity0.getComponent(0)) > 12)//If in Air
 			velocity1.multiplyVectorBySingleNumber(0, 0.75);
@@ -263,8 +292,11 @@ public class Particle {
 	}
 	
 	public void predictionPosition(Particle object, double m) {
-		location1.setComponents(object.location1.getComponent(0) + object.velocity1.getComponent(0) * m,
-				object.location1.getComponent(1) + object.velocity1.getComponent(1) * m);
+		
+		location1.copyVector(object.velocity1);
+		location1.multiplyVectorBySingleNumber(2, m);
+		location1.addVectors(object.location1);
+		
 	}
 	
 	public double solveResultantVector(double vx, double vy) {
@@ -367,24 +399,6 @@ public class Particle {
 		}
 	}
 	
-	private int score = 0;//for the score
-	public void gameRules() {
-		//Detect out of bounds
-		if( x < -150 || x > 1350) {
-			magnetic_str += 20;//Different Rewards for off the side?
-			positionResetKey();
-			score -= 1;
-			System.out.print(color.toString() + " score == " +score);
-			System.out.println();
-		}
-		if( y < -150 || y > 930) {//150 off camera allowed
-			magnetic_str += 20;//Different Rewards for off the top/bottom? Nah
-			positionResetKey();
-			score -= 1;
-			System.out.print(color.toString() + " score == " +score);
-			System.out.println();		}
-	}
-	
 	public void testMagnet_Two(Particle[] objects, int reverse) {
 		vector0.setComponents(0, 0);//int loop used in method
 		for( Particle p : objects) {
@@ -399,8 +413,7 @@ public class Particle {
 			double yDist = location0.getDifference(p.location0, 1);
 			
 			double power_level = Math.pow(p.mag_radius*p.mag_radius - TotalD*TotalD, 0.5);
-			//This TotalForceSize equation doesn't feel right.  Using TotalD in multiple places
-			//double TotalForceSize = (power_level * p.getMS() * 25) / (TotalD*TotalD);//Old Equation
+			
 			double TotalForceSize = (power_level * p.getMS() / 50);
 			
 			double XForce = (xDist/TotalD) * TotalForceSize;
@@ -425,7 +438,36 @@ public class Particle {
 		//if(vector0.getComponent(2) > 0.01)//Debugging
 			//System.out.println(vector0.getComponent(2));
 	}
-	
+public void testMagnetV3(Particle[] objects, int reverse) {//This has a different perspective. Method Caller is the one pushing, not pushed
+		
+		for( Particle p : objects) {
+			if( p == this || !p.magnetic)
+				continue;
+			//Magnetism with a set Radius. (r^2 - loc0^2)^0.5 method
+			double TotalD = location0.getDifference(p.location0, 2);
+			if(TotalD >= mag_radius)//Meant to not divide by 0
+				continue;
+			
+			double xDist = location0.getDifference(p.location0, 0);//Difference of vectors
+			double yDist = location0.getDifference(p.location0, 1);
+			
+			double power_level = Math.pow(mag_radius*mag_radius - TotalD*TotalD, 0.5);
+			
+			double TotalForceSize = (power_level * magnetic_str / 50);
+			
+			double XForce = (xDist/TotalD) * TotalForceSize;
+			double YForce = (yDist/TotalD) * TotalForceSize;
+			
+		
+			if( reverse == 1) {//repel
+				p.forceMagnet.addToVector(XForce, YForce);
+			}
+			else {//attract
+				p.forceMagnet.addToVector(XForce * -1, YForce * -1);
+			}
+		}
+	}
+	//May Delete. Will Likley Never use it.
 	public void testGravity(Particle[] objects) {
 		vector0.setComponents(0, 0);
 		for( Particle p : objects) {
@@ -448,27 +490,14 @@ public class Particle {
 		forceGravity = vector0;
 	}
 	public void testingGravity() {
-		if(jump)
-			forceGravity.setComponents(0, mass);
-		else
-			forceGravity.addToVector(0, 1);
-	}
-	
-	public void seekingParticle(Particle target) {
-		boolean isLeft = target.x < x;
-		boolean isAbove = target.y < y;
-		
-		if(isLeft) {
-			velocity1.addToVector(-1, 0);
-		}
+		forceGravity.setComponents(0, mass);//Tinker around for a bit
+		if(touchUpDown)//Responsible for Ceiling Clinging
+			forceGravity.setComponents(0, 0);
 		else {
-			velocity1.addToVector(1, 0);
+			if(forceGravity.getComponent(1) < mass*20)
+				forceGravity.addToVector(0, 10);//Should there be an else statement that does something?
+			else
+				forceGravity.setComponents(0, mass*20);
 		}
-		if(isAbove) {
-			velocity1.addToVector(0, -1);
-		}
-		else {
-			velocity1.addToVector(0, 1);
-		}	
 	}
 }
