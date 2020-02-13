@@ -1,81 +1,134 @@
-//Mario V2
+
 public class Vector {
+	protected float x, y;
 	
-	private double x,y;
-	
-	public Vector( double x, double y) {
+	public Vector(float x, float y) {
 		this.x = x;
 		this.y = y;
 	}
 	
-	public double getComponent(int i) {
-		if( i == 0)
-			return x;
-		else if( i == 1)
-			return y;
+	public Vector setX(float x) {
+		this.x = x;
+		return this;
+	}
+	
+	public Vector setY(float y) {
+		this.y = y;
+		return this;
+	}
+	
+	public Vector setComponents(float x, float y) {
+		this.x = x;
+		this.y = y;
+		return this;
+	}
+	
+	public float getX() {
+		return x;
+	}
+	
+	public float getY() {
+		return y;
+	}
+	
+	public float getMagnitude() {
+		return (float) Math.sqrt(x * x + y * y);
+	}
+	
+	public Vector normalize() {
+		return this.multiply( 1 / this.getMagnitude() );
+	}
+	
+	public Vector negate() {
+		return this.multiply(-1);
+	}
+	
+	public Vector abs() {
+		return new Vector(Math.abs(x), Math.abs(y));
+	}
+	
+	public Vector add(Vector v) {
+		return new Vector(x + v.x, y + v.y);
+	}
+	
+	public Vector subtract(Vector v) {
+		return new Vector(x - v.x, y - v.y);
+	}
+	
+	public Vector multiply(float d) {
+		return new Vector(x * d, y * d);
+	}
+	
+	public Vector rotate(float a) {
+		return new Vector( (float) (x * Math.cos(a) - y * Math.sin(a)), (float) (x * Math.sin(a) + y * Math.cos(a)) );
+	}
+	
+	public float dotProduct(Vector v) {
+		return x * v.x + y * v.y;
+	}
+	
+	public float angle() {
+		if(x < 0)
+			return (float) (Math.atan( y / x ) + Math.PI);
+		if(x > 0 && y > 0)
+			return (float) Math.atan( y / x );
 		else
-			return Math.sqrt(x*x + y*y);
+			return (float) (Math.atan( y / x ) + 2 * Math.PI);
 	}
 	
-	public double getResultant() {
-		return Math.sqrt(x*x + y*y);
+	public Vector normalizeThis() {
+		return this.multiplyThis( 1 / this.getMagnitude() );
 	}
 	
-	public void setComponent(int i, double component) {
-		if( i == 0)
-			x = component;
-		else
-			y = component;
+	public Vector negateThis() {
+		return this.multiplyThis(-1);
 	}
 	
-	public void setComponents(double nx, double ny) {//nx for 'new x' ny for 'new y'
-		x = nx;
-		y = ny;
+	public Vector addThis(Vector v) {
+		x += v.x;
+		y += v.y;
+		return this;
 	}
 	
-	public double getDifference(Vector loc1, int i) {//to be used with location0, location0 other Particle
-		if( i == 0)
-			return loc1.x - x;
-		else if( i == 1)
-			return loc1.y - y;
-		else
-			return Math.sqrt((loc1.x - x)*(loc1.x - x) + (loc1.y - y)*(loc1.y - y));
+	public Vector subtractThis(Vector v) {
+		x -= v.x;
+		y -= v.y;
+		return this;
 	}
 	
-	public void multiplyVectorBySingleNumber(int component, double multiplier) {
-		if(component == 0)
-			x = x*multiplier;
-		else if(component == 1)
-			y = y*multiplier;
-		else {
-			x = x*multiplier;
-			y = y*multiplier;
+	public Vector multiplyThis(float d) {
+		x *= d;
+		y *= d;
+		return this;
+	}
+	
+	public Vector rotateThis(float a) {
+		float px = (float) (x * Math.cos(a) - y * Math.sin(a));
+		y = (float) (x * Math.sin(a) + y * Math.cos(a));
+		x = px;
+		return this;
+	}
+	
+	@Override
+	public Vector clone() {
+		return new Vector(x, y);
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("<%d, %d>", x, y);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o == this)
+			return true;
+		
+		if(o instanceof Vector) {
+			Vector v = (Vector) o;
+			return v.x == x && v.y == y;
 		}
+		
+		return false;
 	}
-	
-	public void copyVector(Vector v) {
-		x = v.x;
-		y = v.y;
-	}
-	
-	public void addVectors(Vector v1) {//Only changes the Vector that calls this method
-		x = x + v1.x;
-		y = y + v1.y;
-	}
-	
-	public void subtractVectors(Vector v1) {//Only changes the Vector that calls this method
-		x = x - v1.x;
-		y = y - v1.y;
-	}
-	
-	public void combineTwoVectors(Vector v1, Vector v2) {
-		x = v1.x + v2.x;
-		y = v1.y + v2.y;
-	}
-	
-	public void addToVector( double x, double y) {
-		this.x = this.x + x;
-		this.y = this.y + y;
-	}
-	
 }

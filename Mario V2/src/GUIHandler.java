@@ -66,15 +66,15 @@ public class GUIHandler extends JPanel implements KeyListener {
 		
 		//Player Methods
 		for( Particle o: p) {
-			o.testMagnet_Two(b, 1);
-			o.testMagnet_Two(f, 0);//URGENT MUST BE FIXED, BULLET MAGNETISM OVERWRITTEN BY FLOOR MAGNETISM
+			//o.testMagnet_Two(b, 1);
+			//o.testMagnet_Two(f, 0);//URGENT MUST BE FIXED, BULLET MAGNETISM OVERWRITTEN BY FLOOR MAGNETISM
 			o.testingGravity();//There is a patched in solution, but please improve it. Examine int loop
 			o.testFriction();
 			o.doRectangleCollision(f);
 		}
 		//Bullet Methods
 		for( Particle o: b) {
-			//o.testMagnet_Two(f, 0);
+			//o.testMagnetV3(p, 1);//Testing
 			o.doRectangleCollision(f);
 		}
 				
@@ -97,12 +97,6 @@ public class GUIHandler extends JPanel implements KeyListener {
 			p[0].leftKey(4);
 		if(d)
 			p[0].rightKey(4);
-		/*
-		if(q)
-			p[0].upLeftKey();
-		if(e)
-			p[0].upRightKey();
-		*/
 		
 		//Red's Buttons
 		if(i) {
@@ -119,12 +113,7 @@ public class GUIHandler extends JPanel implements KeyListener {
 			p[1].leftKey(4);
 		if(l)
 			p[1].rightKey(4);
-		/*
-		if(u)
-			p[1].upLeftKey();
-		if(o)
-			p[1].upRightKey();
-		*/
+		
 		
 		// Particle Color and Movement Retrieval
 		for( Particle o: t) {
