@@ -8,7 +8,7 @@ public class Particle {
 	public static final int G = 10;
 	
 	// variables
-	protected Vector position, size, velocity, fposition, fvelocity, force;//now protected, was private
+	protected Vector position, size, velocity, fposition, fvelocity, force = new Vector(0,0);
 	protected float mass, magnetic_str, mag_radius;//Examine to see if setting to private has value
 	protected boolean movable;
 	
@@ -22,6 +22,7 @@ public class Particle {
 		
 		this.velocity = velocity;
 		this.fvelocity = velocity.clone();
+		
 		
 		this.size = size;
 		
@@ -41,35 +42,7 @@ public class Particle {
 		return false;
 	}
 	
-	public void doRectangleCollision(Particle[] objects) {
-		//int numCollisions = 0;//for the jump = false if in air => I solved the problem
-		//May need to move into Player class for int numUPDown, numLeftRight;
-		for( Particle p : objects) {
-			if(p == this)
-				continue;
-			
-			Vector dist = p.position.subtract(position);
-			Vector bounds = p.size.add(size).multiply(0.5f);
-			
-			if(dist.x <= bounds.x && dist.y <= bounds.y) {
-				Vector gap = dist.abs().subtract(bounds);
-				
-				if(gap.x < gap.y) {
-					fvelocity.setX(0);
-					if(position.x < p.position.x)
-						fposition.add(new Vector(gap.x - size.x / 2, 0));
-					else
-						fposition.add(new Vector(gap.x + size.x / 2, 0));
-				}else {
-					fvelocity.setY(0);
-					if(position.y < p.position.y)
-						fposition.add(new Vector(0, gap.y - size.y / 2));
-					else
-						fposition.add(new Vector(0, gap.y + size.y / 2));
-				}
-			}
-		}
-	}
+	//Moved doRectangleCollision to Player Class
 	
 	public void bulletFiredV2(Particle shooter, Particle target) {//Used by Bullet Particle
 		Vector direction = target.position.subtractThis(shooter.position).normalize();
@@ -101,10 +74,11 @@ public class Particle {
 	}
 	
 	public void updatePreparing() {
-		fvelocity.addThis(force.multiply((1.0f/mass)));
-		force.setComponents(0, 0);//Reset for next round.
+		fvelocity.add(force.multiply(1.0f/mass));
+		force.multiply(0);//Reset for next round.
 		if(movable) 
 			fposition.add(fvelocity);
+		//System.out.println(fvelocity.getMagnitude());//Debugging
 		position = fposition;
 		velocity = fvelocity;
 	}
