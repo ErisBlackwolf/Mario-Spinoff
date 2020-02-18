@@ -9,10 +9,10 @@ import javax.swing.JPanel;
 public class GUIHandler extends JPanel implements KeyListener {
 
 	//private classes added here
-	private Player [] p;//Player Particles
+	private Player [] p;//Player
 	//private Particle [] t;//Target Particles
 	//private Particle [] b;//Bullet Particles
-	//private Particle [] f;//Floor Particles
+	private Structure [] f;//Floor Player//Might Create Floor Subclass
 	
 	//Key Memory
 	private boolean w = false,s = false,a = false,d = false, q = false,e = false;
@@ -27,28 +27,34 @@ public class GUIHandler extends JPanel implements KeyListener {
 	public GUIHandler() {//Constructor
 		p = new Player[2];
 		//Player		Vector position,		Vector size,	Vector velocity,  mass,mag_str,mad_radius,movable,Clolor;
-		p[0] = new Player(new Vector(300,370), new Vector(20,20), new Vector(0,5), 20f,20f,20f,true,Color.BLUE);
-		p[1] = new Player(new Vector(900,370), new Vector(20,20), new Vector(0,0), 20f,20f,20f,true,Color.RED);
-				
+		p[0] = new Player(new Vector(300,580), new Vector(20,20), new Vector(0,0), 20f,20f,20f,true,Color.BLUE);
+		p[1] = new Player(new Vector(900,580), new Vector(20,20), new Vector(0,0), 20f,20f,20f,true,Color.RED);
+		//Floor Structure
+		f = new Structure[6];
+		f[0] = new Structure(new Vector(300,770), new Vector(400,20), new Vector(0,0), 20f,20f,20f,false,Color.DARK_GRAY);
+		f[1] = new Structure(new Vector(900,770), new Vector(400,20), new Vector(0,0), 20f,20f,20f,false,Color.DARK_GRAY);
+		f[2] = new Structure(new Vector(350,640), new Vector(200,20), new Vector(0,0), 20f,20f,20f,false,Color.DARK_GRAY);
+		f[3] = new Structure(new Vector(850,640), new Vector(200,20), new Vector(0,0), 20f,20f,20f,false,Color.DARK_GRAY);
+		f[4] = new Structure(new Vector(600,700), new Vector(20,200), new Vector(0,0), 20f,20f,20f,false,Color.DARK_GRAY);
+		f[5] = new Structure(new Vector(300,750), new Vector(20,20), new Vector(0,0), 10f,20f,20f,true,Color.GRAY);
 	}
 
 	public void paint(Graphics g) {
 		
 		OffsetX = OffsetX + p[0].cameraFocus(OffsetX);
-		/*
-		//Player Methods
-		for( Player o: p) {
-			
-			o.testFriction();
-			//o.doRectangleCollisionP2(p);
-		}
 		
-		//Bullet Methods
-		for( Particle o: b) {
-			//o.testMagnetV3(p, 1);//Testing
-			o.doRectangleCollision(f);
+		if(p[0].rectTest(f))//For Debugging
+			p[1].setColor(Color.YELLOW);
+		else
+			p[1].setColor(Color.RED);
+		
+		f[5].pushing(p);
+		
+		for( Player o: p) {
+			o.gravityI();
+			o.doRectangleCollisionP2(f);
+			o.testFriction();
 		}
-		*/	
 		
 		//Blue's Buttons
 		if(w) {
@@ -89,7 +95,14 @@ public class GUIHandler extends JPanel implements KeyListener {
 			g.setColor(o.getColor());
 			//g.fillRect(, y, width, height);
 			g.fillRect( (int)((OffsetX) + o.getX() - o.getW() / 2), (int) (o.getY() - o.getH() / 2), (int) (o.getW()), (int) o.getH());
-		}		
+		}
+		for( Structure o: f) {
+			o.updatePreparing();
+			
+			g.setColor(o.getColor());
+			//g.fillRect(, y, width, height);
+			g.fillRect( (int)((OffsetX) + o.getX() - o.getW() / 2), (int) (o.getY() - o.getH() / 2), (int) (o.getW()), (int) o.getH());
+		}
 	}
 
 	@Override

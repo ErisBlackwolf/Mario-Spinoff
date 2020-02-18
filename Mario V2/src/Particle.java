@@ -74,20 +74,19 @@ public class Particle {
 	}
 	
 	public void updatePreparing() {
-		fvelocity.add(force.multiply(1.0f/mass));
-		force.multiply(0);//Reset for next round.
+		fvelocity.addThis(force.multiply(1.0f/mass));
+		force.multiplyThis(0);//Reset for next round.
 		if(movable) 
-			fposition.add(fvelocity);
-		//System.out.println(fvelocity.getMagnitude());//Debugging
-		position = fposition;
-		velocity = fvelocity;
+			fposition.addThis(fvelocity);
+		position = fposition.clone();
+		velocity = fvelocity.clone();
 	}
 	
 	public void predictionPosition(Particle object, float m) {
 		fposition = object.position.clone();//Ask Jake about .clone();
 		fposition.addThis(object.velocity.multiply(m));
 	}
-
+	
 	public Color getColor() {
 		return color;
 	}
@@ -96,6 +95,19 @@ public class Particle {
 		this.color = color;
 	}
 
+	public float getX() {
+		return position.x;
+	}
+	public float getY() {
+		return position.y;
+	}
+	public float getW() {
+		return size.x;
+	}
+	public float getH() {
+		return size.y;
+	}
+	
 	public float getM() {
 		return mass;
 	}
@@ -122,12 +134,12 @@ public class Particle {
 	public void DoPrograde() {
 		if(velocity.getMagnitude() == 0)//Prevents from dividing by 0
 			return;
-		fvelocity.add(velocity.normalizeThis().multiply(5));
+		fvelocity.addThis(velocity.normalizeThis().multiply(5));
 	}
 	public void DoRetrograde() {
 		if(velocity.getMagnitude() < 5)//Prevents from dividing by 0
-			fvelocity.multiply(0);
-		fvelocity.subtract(velocity.normalizeThis().multiply(5));
+			fvelocity.multiplyThis(0);
+		fvelocity.subtractThis(velocity.normalizeThis().multiply(5));
 	}
 	
 	
@@ -145,9 +157,9 @@ public class Particle {
 			tDisp.normalizeThis().multiply(forceSize * magnetic_str / 50);//name of vector is misleading
 		
 			if( reverse == 1)//repel
-				p.force.subtract(tDisp);
+				p.force.subtractThis(tDisp);
 			else //attract
-				p.force.add(tDisp);
+				p.force.addThis(tDisp);
 		}
 	}
 	
