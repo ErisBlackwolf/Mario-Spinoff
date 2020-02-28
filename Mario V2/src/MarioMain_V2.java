@@ -15,7 +15,7 @@ public class MarioMain_V2 {
 		GUIHandler gui = new GUIHandler();
 		w.add(gui);
 		w.addKeyListener(gui);
-				
+		
 		w.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		w.pack();
 		w.setSize(1200, 800);//1200, 780 is shown
@@ -23,6 +23,9 @@ public class MarioMain_V2 {
 		w.setVisible(true);
 		while (true) {
 			long elapsed = System.nanoTime();
+			// game logic
+			
+			// draw calls
 			w.repaint();
 			
 			try {

@@ -1,45 +1,66 @@
 import java.awt.Color;
+//import java.util.ArrayList;
 
 public class Player extends Particle {
 	private int jumps = 1;
-	private boolean leftWJ = false, rightWJ = false, touchUpDown = false;
+	private boolean toggleUp = false;
 
 	public Player(Vector position, Vector size, Vector velocity, float mass, float magnetic_str, float mag_radius,
 			boolean movable, Color color) {
 		super(position, size, velocity, mass, magnetic_str, mag_radius, movable, color);
 		// TODO Auto-generated constructor stub
 	}
+	//Some Experimental set (no get) Methods
+	public void setToggleUp(boolean tU) {
+		toggleUp = tU;
+	}
+	public void setJumps(int j) {
+		jumps = j;
+	}
+	
+	public void upKeyToggle() {
+		//Change Here
+		if(toggleUp) {
+			toggleUp = false;
+			if(touchUpDown == true) {
+				jumps = 1;
+				fvelocity.addThis(new Vector(0, -16));//-16
+			}else if(jumps > 0){
+				jumps--;
+				fvelocity.setY(-10);
+			}
+		}
+	}
 	
 	public void upKey() {
 		//System.out.println("w");//Debugging
-		if(jumps > 0) {
-			if(touchUpDown == true) 
-				fvelocity.add(new Vector(0, -16));
-			else {
-				jumps--;
-				fvelocity.add(new Vector(0, -10));//Double Jumps are weaker
-			}
-			rightWJ = false;
-			leftWJ = false;
+		if(touchUpDown == true) {
+			jumps = 1;
+			fvelocity.addThis(new Vector(0, -16));//-16
+		}else if(jumps > 0){
+			jumps--;
+			fvelocity.setY(-10);
 		}
 	}
 	public void downKey() {
-		fvelocity.add(new Vector(0, 2));
+		fvelocity.addThis(new Vector(0, 2));
 	}
 	public void rightKey(float speed) {
-		if(leftWJ == true) {
-			fvelocity.setComponents(20, -8);//Adjust Wall Jump
-			leftWJ = false;
-		}else {
-			fvelocity.add(new Vector(speed, 0));
+		if(touchUpDown) {//On Ground
+			fvelocity.addThis(new Vector(speed, 0));
+		}else if(touchLeft) {//In Air Touching Left Structure
+			fvelocity.setComponents(16, -12);//Adjust Wall Jump//(20,-8)
+		}else {//else if(!touchRight)? Could be next to Right Wall, but won't matter. In Air
+			fvelocity.addThis(new Vector(speed/1.5f, 0));
 		}
 	}
 	public void leftKey(float speed) {
-		if(rightWJ == true) {
-			fvelocity.setComponents(-20, -8);//Adjust Wall Jump
-			rightWJ = false;
-		}else {
-			fvelocity.subtract(new Vector(speed, 0));
+		if(touchUpDown) {//On Ground
+			fvelocity.subtractThis(new Vector(speed, 0));
+		}else if(touchRight) {//In Air Touching Left Structure
+			fvelocity.setComponents(-16, -12);//Adjust Wall Jump//(20,-8)
+		}else {//else if(!touchRight)? Could be next to Left Wall, but won't matter. In Air
+			fvelocity.subtractThis(new Vector(speed/1.5f, 0));
 		}
 	}
 	public void upLeftKey() {
@@ -48,81 +69,60 @@ public class Player extends Particle {
 	public void upRightKey() {
 		DoPrograde();
 	}
-	/*
-	public void positionResetKey() {
-		fvelocity.setComponents(ovx, ovy);
-		fposition.setComponents(ox, oy);
-	}
-	public void dataKey() {
-		System.out.println(color.toString());
-		System.out.print(" x == " +x+ ", y == " +y);
-		System.out.print(" vx == " +vx+ ", vy == " +vy);
-		System.out.println();
-	}
-	*/
-	public float getX() {
-		return position.x;
-	}
-	public float getY() {
-		return position.y;
-	}
-	public float getW() {
-		return size.x;
-	}
-	public float getH() {
-		return size.y;
-	}
 	
-	public void testFriction() {
-		
-		if(velocity.x != 0 && touchUpDown)//If on Ground
-			fvelocity.subtract(velocity.setY(0).multiply(0.25f));//ensure this works
-		else if(Math.abs(velocity.getX()) > 12)//If in Air
-			fvelocity.subtract(velocity.setY(0).multiply(0.25f));//ensure this works
-		if(Math.abs(velocity.getX()) < 0.01)//If vx is super low but not 0
-			fvelocity.setX(0);
-		
-		if(Math.abs(velocity.getY()) > 20)
-			fvelocity.multiply(0.75f);//So I don't clip through floor
+	public void gravityII() {
+		if(touchUpDown)
+			return;//Feels Cheap, but fixes predictPosition
+		if(!toggleUp || touchLeft || touchRight)
+			force.addThis(new Vector(0,mass*1.5f));
+		else
+			force.addThis(new Vector(0,mass*4f));
 	}
-	public void doRectangleCollisionP2(Particle[] objects) {
-		int numUDCollisions = 0;//for the jump = false if in air => I solved the problem
-		int numLRCollisions = 0;
+	/*
+	public void doRectangleCollisionQSBulletPush(ArrayList<Projectile> b) {//Quarter Step
 		
-		for( Particle p : objects) {
+		for( Particle p : b) {
 			if(p == this)
 				continue;
 			
-			Vector dist = p.position.subtract(position);
 			Vector bounds = p.size.add(size).multiply(0.5f);
+			for(int step = 1; step < 5; step++) {
 			
-			if(dist.x <= bounds.x && dist.y <= bounds.y) {
-				Vector gap = dist.abs().subtract(bounds);
+				Vector dist = p.position.subtract(position.add(velocity.multiply(0.25f*step))).abs();
 				
-				if(gap.x < gap.y) {
-					fvelocity.setX(0);
-					numLRCollisions++;
-					if(position.x < p.position.x)
-						fposition.add(new Vector(gap.x - size.x / 2, 0));
-					else
-						fposition.add(new Vector(gap.x + size.x / 2, 0));
-				}else {
-					fvelocity.setY(0);
-					numUDCollisions++;
-					if(position.y < p.position.y)
-						fposition.add(new Vector(0, gap.y - size.y / 2));
-					else
-						fposition.add(new Vector(0, gap.y + size.y / 2));
+				if(dist.x <= bounds.x && dist.y <= bounds.y) {
+					//.abs() is screwing me on this. Don't know whether to add or subtract velocity
+					//Maybe just remake gap without dist
+					Vector gap = p.position.subtract(position).abs().subtract(bounds);
+					
+					step = 5;//End Quarter Step Checking
+					
+					if(gap.x > gap.y) {//Left/Right
+						if(position.x < p.position.x) {
+							fposition.addThis(new Vector(gap.x, 0));//Moves this Particle out of object
+							if(fvelocity.x > 0)
+								fvelocity.setX(0);
+						}else{
+							fposition.subtractThis(new Vector(gap.x, 0));
+							if(fvelocity.x < 0)
+								fvelocity.setX(0);
+						}
+					}
+					if(gap.x < gap.y) {//Up/Down
+						if(position.y < p.position.y) {
+							fposition.addThis(new Vector(0, gap.y));
+							jumps = 1;//Changed Here; Cheap Solution
+							if(fvelocity.y > 0)
+								fvelocity.setY(0);
+						}else {
+							fposition.subtractThis(new Vector(0, gap.y));
+							if(fvelocity.y < 0)
+								fvelocity.setY(0);
+						}
+					}
 				}
 			}
 		}
-		if(numLRCollisions == 0) {
-			leftWJ = false;
-			rightWJ = false;
-			//touchLeftRight = false;
-		}
-		if(numUDCollisions == 0) {
-			touchUpDown = false;
-		}
 	}
+	*/
 }
